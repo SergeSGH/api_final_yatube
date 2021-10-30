@@ -1,6 +1,6 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-# from django.shortcuts import get_object_or_404
 
 from posts.models import Comment, Follow, Group, Post, User
 
@@ -44,22 +44,25 @@ class FollowSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    following = serializers.StringRelatedField()
+    following = serializers.SlugRelatedField(
+        slug_field='username',
+        queryset=User.objects.all()
+    )
 
-    # def create(self, validated_data):
-    #    print(validated_data, type(validated_data))
-    #    following_username = validated_data['following']
-    #    following = get_object_or_404(User, username=following_username)
-    #    follow, status = Follow.objects.get_or_create(
-    #       user=user, following=following
-    #    )
-    #    return follow
+    def validate_following(self, following):
+        username = self.context['request'].user
+        if username == following:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя!'
+            )
+        user = get_object_or_404(User, username=username)
+        author = get_object_or_404(User, username=following)
+        if Follow.objects.filter(user=user).filter(
+            following=author
+        ).exists():
+            raise serializers.ValidationError('Подписка уже есть!')
 
-    # def validate(self, data):
-    #    print(data)
-    #    if self.user.username == data['following']:
-    #        raise serializers.ValidationError('Подписаться на себя нельзя!')
-    #    return data
+        return following
 
     class Meta:
         fields = ('user', 'following')
