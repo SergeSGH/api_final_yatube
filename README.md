@@ -31,10 +31,13 @@ py -m venv venv
 pip install -r requirements.txt
 ```
 
-Выполнить миграции:
+Выполнить миграции и создать суперпользователя:
 
 ```
 py manage.py migrate
+```
+```
+py manage.py createsuperuser
 ```
 
 Запустить проект:
